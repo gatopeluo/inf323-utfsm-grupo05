@@ -1,0 +1,37 @@
+---
+
+################################
+## Ansible Playbook para TLS  ##
+################################
+
+- hosts: [grupo05]
+  become: yes
+  tasks:
+    - name: crear directorio para tls
+      file: path=/tls state=directory
+
+    - name: descargar certificado chain
+      get_url:
+        url: https://doc-08-0c-docs.googleusercontent.com/docs/securesc/e5c4vlqll06tdisfjgei7207vmmkmsgt/o6o7q3bbcb9o3ogs1j616sinjnr1rvfa/1508810400000/14788395644403209513/14788395644403209513/0B13rFZGu3XnuNTVnWS1lcEJPVjQ?h=10257068084592261287&e=download
+        dest: /tls/chain.pem
+
+    - name: descargar certificado fullchain
+      get_url:
+        url: https://drive.google.com/a/alumnos.usm.cl/uc?id=0B13rFZGu3XnuRF9JTmxiNk5nZTg&export=download
+        dest: /tls/fullchain.pem
+
+    - name: descargar certificado privkey
+      get_url:
+        url: https://doc-14-0c-docs.googleusercontent.com/docs/securesc/e5c4vlqll06tdisfjgei7207vmmkmsgt/7404ohf8nj8nho8581afee70n2kbp0b3/1508810400000/14788395644403209513/14788395644403209513/0B13rFZGu3XnuYjByVnBLUTlGSmM?h=10257068084592261287&e=download
+        dest: /tls/privkey.pem
+
+    - name: insertar/actualizar ssl on grupo05.mosorio.me.conf
+      lineinfile:
+         path: /etc/nginx/sites-available/grupo05.mosorio.me.conf
+         regexp: '{{ item.regexp }}'
+         insertafter: '{{ item.insertafter }}'
+         line: '{{ item.line }}'
+      with_items:
+         - { regexp: '(.*)ssl_certificate', insertafter: 'server_name grupo05.mosorio.me;' , line: 'ssl_certificate   /tls/fullchain.pem;' }
+         - { regexp: '(.*)ssl_certificate_key', insertafter: 'ssl_certificate   /tls/fullchain.pem;' , line: 'ssl_certificate_key   /tls/privkey.pem;' }
+         - { regexp: '(.*)ssl_trusted_certificate', insertafter: 'ssl_certificate_key   /tls/privkey.pem;' , line: 'ssl_trusted_certificate   /tls/chain.pem;' }

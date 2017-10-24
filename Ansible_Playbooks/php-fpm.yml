@@ -1,0 +1,24 @@
+---
+
+####################################
+## Ansible Playbook para php-fpm  ##
+####################################
+
+- hosts: [grupo05]
+  become: yes
+  tasks:
+      - name: install ius repo.
+        yum: name=https://centos7.iuscommunity.org/ius-release.rpm state=present
+
+      - name: install php 5.6
+        yum: name=php56u state=latest
+
+      - name: install php-fpm 5.6
+        yum: name=php56u-fpm state=latest
+
+  handlers:
+     - name: start php-fpm service
+       service: name=php-fpm state=restarted
+
+     - name: Enable php-fpm service
+       service: name=php-fpm enabled=yes

@@ -1,0 +1,90 @@
+---
+
+########################################
+## Ansible Playbook para Serverblock  ##
+########################################
+
+- hosts: [grupo05]
+  become: yes
+  tasks:
+     - name: crear directorio para test
+       file: path=/srv/www/test state=directory
+
+     - name: crear index.html en test
+       file: path=/srv/www/test/index.html state=touch mode=0755
+
+     - name: agregar contenido a index.html
+       blockinfile:
+         path: /srv/www/test/index.html
+         block: |
+           Success! Nginx is properly serving on this domain!
+           holi holi
+           gg
+
+     - name: crear directorio sites-enabled
+       file: path=/etc/nginx/sites-enabled state=directory
+
+     - name: crear directorio sites-available
+       file: path=/etc/nginx/sites-available state=directory
+
+     - name: incluir sites-enabled en nginx.conf
+       lineinfile: path=/etc/nginx/nginx.conf regexp='^(.*)include /etc/nginx/sites-enabled/*.conf;' insertafter='^http {' line='include /etc/nginx/sites-enabled/*.conf;'
+
+     - name: agregar hash_bucket_size en nginx.conf
+       lineinfile: path=/etc/nginx/nginx.conf regexp='^(.*)server_names_hash_bucket_size 64;' insertafter='^http {' line='server_names_hash_bucket_size 64;'
+
+     - name: crear serverblock grupo05.mosorio.me.conf
+       file: path=/etc/nginx/sites-available/grupo05.mosorio.me.conf state=touch mode=0755
+
+     - name: insertar/actualizar configuración para el serverblock grupo05.mosorio.me
+       blockinfile:
+         path: /etc/nginx/sites-available/grupo05.mosorio.me.conf
+         block: |
+           server{
+              listen 80;
+              server_name grupo05.mosorio.me;
+
+              root   /srv/www/test;
+              index  index.php index.html index.htm;
+              try_files $uri $uri/ =404;
+
+              location ~ \.php$ {
+                fastcgi_split_path_info ^(.+\.php)(/.+)$;
+                fastcgi_pass   127.0.0.1:9091;
+                fastcgi_index  index.php;
+                fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+                include        fastcgi_params;
+                include  /etc/nginx/mime.types;
+              }
+
+              error_page   500 502 503 504  /50x.html;
+              location = /50x.html {
+                  root /srv/www/opencart;
+              }
+
+              location ~ /\.ht {
+                deny all;
+              }
+            }
+
+     - name: Create link entre sites-available y sites-enabled
+       file: src=/etc/nginx/sites-available/grupo05.mosorio.me.conf dest=/etc/nginx/sites-enabled/grupo05.mosorio.me.conf state=link
+
+     - name: cgi.fix_pathinfo igual a 0 en php.ini
+       lineinfile: path=/etc/php.ini regexp='^(.*)cgi.fix_pathinfo=' line='cgi.fix_pathinfo=0'
+
+     - name: listen igual a 127.0.0.9091
+       lineinfile: path=/etc/php-fpm.d/www.conf regexp='^(.*)listen=' line='listen=127.0.0.1:9091'
+
+     - name: nginx como usuario en www.conf
+       lineinfile: path=/etc/php-fpm.d/www.conf regexp='^(.*)user=' line='user=nginx'
+
+     - name: nginx como grupo en www.conf
+       lineinfile: path=/etc/php-fpm.d/www.conf regexp='^(.*)group=' line='group=nginx'
+
+  handlers:
+     - name: restart php-fpm
+       service: name=php-fpm state=restarted
+
+     - name: restart nginx
+       service: name=nginx state=restarte
