@@ -3,6 +3,8 @@
  RUN mkdir /code
  WORKDIR /code
  ADD requirements.txt /code/
+ EXPOSE 8000
  RUN pip install -r requirements.txt
  ADD . /code/
- RUN python3 manage.py runserver 0.0.0.0:5555
+ RUN django-admin.py startproject djangotest
+ CMD ["/code/runscript.sh"]
