@@ -6,5 +6,4 @@
  EXPOSE 5555:5555
  RUN pip install -r requirements.txt
  ADD . /code/
- RUN django-admin.py startproject djangotest
  CMD ["/code/runscript.sh"]
