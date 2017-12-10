@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 services:
   db:
@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: grupo05
       POSTGRES_PASSWORD: omaewa
     restart: always
-    image: postgres:9.6
+    image: postgres
     expose:
       - "5432"
   redis:
